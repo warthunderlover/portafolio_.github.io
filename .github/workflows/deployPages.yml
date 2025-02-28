@@ -1,0 +1,56 @@
+name: Despliegue a GitHub Pages del MPA con Vite
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  DEPLOY_BASE_URL: ${{ vars.DEPLOY_BASE_URL }}
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.github_pages.outputs.url }}
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Checkout (clonar repositorio)
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Verificar variables de ambiente
+        run: echo "DEPLOY_BASE_URL $DEPLOY_BASE_URL"
+
+      - name: Compilar proyecto
+        run: npm run build
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir compilado
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Publicar página
+        id: deployment 
+        uses: actions/deploy-pages@v4
